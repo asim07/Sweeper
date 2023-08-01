@@ -12,6 +12,7 @@ class Sweeper {
 
     async sweepNativeCoins(depositAddresses) {
         console.log(depositAddresses)
+        let i =0;
         const balances = await getBalances(this.ether, depositAddresses);
         for (const address in balances) {
             const balance = balances[address];
@@ -22,6 +23,7 @@ class Sweeper {
                 console.log(tx);
             }
             console.log(`sending balance from address :  ${address}   amount : ${balance}`);
+
         }
     }
 
@@ -57,6 +59,12 @@ class Sweeper {
         console.log("Estimated Gas Limit:", estimatedGas);
 
         // Subtract gas limit from tx.value directly
+        let value = tx.value - ethers.parseEther(estimatedGas.toString());
+        if(value > 0) {
+            tx.value = value;
+        }else{
+            return;
+        }
         tx.value = tx.value - ethers.parseEther(estimatedGas.toString());
         console.log("After deducting gas:", tx.value);
 

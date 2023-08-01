@@ -19,13 +19,14 @@ function deriveKeyPairFromMaster(masterPrivateKey, childPublicAddress) {
     throw new Error('Child public address not found.');
 }
 
-async function getBalances(web3, addresses, tokenAddress = null) {
+async function getBalances(ether, addresses, tokenAddress = null , provider = null) {
     const balances = {};
     console.log("get balances function triggered");
     for (const address of addresses) {
         if (tokenAddress === null) {
             // Fetch balance for native coin (Ether)\
-            const balance = await web3.getBalance(address);
+
+            const balance = await ether.getBalance(address);
 
             // console.log(ethers.formatEther(balance));
 
