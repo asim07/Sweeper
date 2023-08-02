@@ -24,7 +24,6 @@ class Sweeper {
                     this.destinationAddress,
                     balance
                 );
-                console.log(this.ether);
                 if (tx == null) {
                     console.log(
                         `To low balance to transfer |${address}  : ${ethers.formatEther(
@@ -49,8 +48,9 @@ class Sweeper {
                 depositAddresses,
                 tokenAddress
             );
+
             console.log(
-                `ERC20 CONTRACT ${contractNames[tokenAddress]} balances found`
+                `ERC20 CONTRACT ${contractNames[tokenAddress]} balances Details`
             );
             console.log(balances);
             for (const address in balances) {
