@@ -97,12 +97,56 @@ const { ethers } = require('ethers');
 //     console.error(error.message);
 // }
 
-const test = async () => {
-    let customHttpProvider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
-    const balance = await customHttpProvider.getBalance("0xfc9afb771Ee3eA34e6Ee8fA40FF0709816920E64");
-    console.log(balance);
-    // const balance = await customHttpProvider.balance
-    // console.log(ethers.JsonRpcApiProvider)
+// const test = async () => {
+//     let customHttpProvider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+//     const balance = await customHttpProvider.getBalance("0xfc9afb771Ee3eA34e6Ee8fA40FF0709816920E64");
+//     console.log(ethers.formatEther(balance.toString()), "ETH");
+//     // const balance = await customHttpProvider.balance
+//     // console.log(ethers.JsonRpcApiProvider)
+// }
+
+// test();
+// in nodeJs
+const axios = require('axios');
+
+async function fetchGasPrice(providerUrl) {
+    try {
+        const response = await axios.post(providerUrl, {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'eth_gasPrice',
+            params: [],
+        });
+
+        if (response.data && response.data.result) {
+            const gasPriceWei = response.data.result;
+            return gasPriceWei;
+        } else {
+            throw new Error('Gas price not available in the response');
+        }
+    } catch (error) {
+        throw new Error('Error fetching gas price: ' + error.message);
+    }
 }
 
-test();
+// Ethereum Mainnet Infura URL
+const ethereumProviderUrl = 'https://mainnet.infura.io/v3/886780ecb0e74a5191b8fc1a507a9e5e';
+
+// Binance Smart Chain Mainnet Infura URL
+const bscProviderUrl = 'https://polygon-mainnet.infura.io/v3/886780ecb0e74a5191b8fc1a507a9e5e';
+
+fetchGasPrice(ethereumProviderUrl)
+    .then((gasPriceWei) => {
+        console.log(`Ethereum Mainnet Gas Price: ${gasPriceWei} Wei`);
+    })
+    .catch((error) => {
+        console.error('Error fetching Ethereum gas price:', error);
+    });
+
+fetchGasPrice(bscProviderUrl)
+    .then((gasPriceWei) => {
+        console.log(`BSC Mainnet Gas Price: ${parseInt(gasPriceWei, 16)} Wei`);
+    })
+    .catch((error) => {
+        console.error('Error fetching BSC gas price:', error);
+    });

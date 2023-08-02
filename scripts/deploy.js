@@ -1,5 +1,5 @@
-// scripts/deploy.js
-const { ethers, upgrades} = require("hardhat");
+const fs = require('fs');
+const { ethers, upgrades } = require('hardhat');
 
 async function main() {
   const numContracts = 5;
@@ -7,6 +7,7 @@ async function main() {
   const testAmount = 100000000;
 
   const accounts = await ethers.getSigners();
+  const deployedContracts = [];
 
   for (let i = 1; i <= numContracts; i++) {
     const contractName = `TestToken${i}`;
@@ -15,8 +16,9 @@ async function main() {
 
     const myToken = await ethers.deployContract('Test', [contractName, contractSymbol]);
     await myToken.waitForDeployment();
-    let value = await myToken.getAddress();
-    console.log(`Contract ${contractName} deployed to: ${ value }`);
+    const contractAddress = await myToken.getAddress();
+    deployedContracts.push(contractAddress);
+    console.log(`Contract ${contractName} deployed to: ${contractAddress}`);
 
     // Mint tokens to each wallet address
     for (let j = 0; j < numWallets; j++) {
@@ -27,6 +29,11 @@ async function main() {
       console.log(`Balance of ${walletAddress}: ${ethers.formatEther(balance)}`);
     }
   }
+
+  // Save deployed contract addresses to a JSON file
+  fs.writeFileSync('deployedContracts.json', JSON.stringify(deployedContracts, null, 2));
+
+  console.log('Deployed contract addresses saved to deployedContracts.json');
 }
 
 main()

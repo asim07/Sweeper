@@ -1,41 +1,45 @@
 const { Web3 } = require('web3');
 const { ethers } = require('ethers');
-const { deriveKeyPairFromMaster, getBalances, getUnspentOutputs } = require('./utils');
+const { deriveKeyPairFromMaster, getBalances, fetchGasPrice } = require('./utils');
+const { infuraID } = require('./config');
 
 class Sweeper {
     constructor(masterPrivateKey, destinationAddress) {
         this.masterPrivateKey = masterPrivateKey;
         this.destinationAddress = destinationAddress;
         this.ether = new ethers.JsonRpcProvider('http://127.0.0.1:8545'); // Replace with the desired Ethereum node URL
-        // console.log(this.web3);
     }
 
     async sweepNativeCoins(depositAddresses) {
-        console.log(depositAddresses)
-        let i =0;
         const balances = await getBalances(this.ether, depositAddresses);
         for (const address in balances) {
             const balance = balances[address];
             if (balance > 0) {
-                console.log("in loop")
                 const tx = await this.createNativeCoinTransaction(address, this.destinationAddress, balance);
                 // await this.broadcastTransaction(tx);
-                console.log(tx);
+                console.log(this.ether);
+                if (tx == null) {
+                    console.log(`To low balance to transfer |${address}  : ${ethers.formatEther(balance.toString())} ETH`);
+                } else {
+                    // console.log(tx);
+                    console.log(`sending balance from address :  ${address}   amount : ${ethers.formatEther(balance.toString())} ETH`);
+                }
             }
-            console.log(`sending balance from address :  ${address}   amount : ${balance}`);
 
         }
     }
 
-    async sweepERC20Tokens(erc20TokenAddresses) {
+    async sweepERC20Tokens(erc20TokenAddresses, depositAddresses) {
         for (const tokenAddress of erc20TokenAddresses) {
-            const balances = await getBalances(this.web3, depositAddresses, tokenAddress);
-
+            const balances = await getBalances(this.ether, depositAddresses, tokenAddress);
+            console.log(`ERC20 CONTRACT ${tokenAddress} balances found`);
+            console.log(balances);
             for (const address in balances) {
                 const balance = balances[address];
                 if (balance > 0) {
                     const tx = await this.createTokenTransferTransaction(tokenAddress, address, this.destinationAddress, balance);
-                    await this.broadcastTransaction(tx);
+                    console.log(`sending ERC20Tokens ${tokenAddress} from address :  ${address}   to ${this.destinationAddress}  amount : ${ethers.formatEther(balance.toString())} ETH`);
+
                 }
             }
         }
@@ -60,12 +64,12 @@ class Sweeper {
 
         // Subtract gas limit from tx.value directly
         let value = tx.value - ethers.parseEther(estimatedGas.toString());
-        if(value > 0) {
+        if (value > 0) {
             tx.value = value;
-        }else{
-            return;
+        } else {
+            return null;
         }
-        tx.value = tx.value - ethers.parseEther(estimatedGas.toString());
+        // tx.value = tx.value - ethers.parseEther(estimatedGas.toString());
         console.log("After deducting gas:", tx.value);
 
         // Sign and send the transaction
@@ -75,24 +79,21 @@ class Sweeper {
 
     async createTokenTransferTransaction(tokenAddress, fromAddress, toAddress, amount) {
         const keyPair = deriveKeyPairFromMaster(this.masterPrivateKey, fromAddress);
-        const provider = new ethers.providers.JsonRpcProvider(); // Replace with the desired Ethereum node URL
-        const wallet = new ethers.Wallet(keyPair.privateKey, provider);
+        const wallet = new ethers.Wallet(keyPair.privateKey, this.ether);
 
         const contract = new ethers.Contract(tokenAddress, ['function transfer(address to, uint256 value)'], wallet);
-        const gasPrice = await this.web3.eth.getGasPrice();
-        const gasLimit = await contract.estimateGas.transfer(toAddress, amount);
+        const gasPrice = await fetchGasPrice(infuraID);
+        // const gasLimit = await contract.transfer(toAddress, amount);
 
         const tx = await contract.transfer(toAddress, amount, {
-            gasLimit: gasLimit,
+            gasLimit: 500000,
             gasPrice: gasPrice,
         });
+
 
         return tx;
     }
 
-    async broadcastTransaction(rawTransaction) {
-        return this.ether.sendTransaction(rawTransaction);
-    }
 }
 
 module.exports = Sweeper;
