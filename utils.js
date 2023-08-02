@@ -1,7 +1,7 @@
 const Web3 = require('web3');
-const { ethers, Contract, getDefaultProvider } = require("ethers");
+const { ethers, Contract, getDefaultProvider } = require('ethers');
 const Abi = require('./artifacts/contracts/Test.sol/Test.json');
-const axios = require('axios')
+const axios = require('axios');
 
 function deriveKeyPairFromMaster(masterPrivateKey, childPublicAddress) {
     const hdNode = ethers.HDNodeWallet.fromExtendedKey(masterPrivateKey);
@@ -22,30 +22,24 @@ function deriveKeyPairFromMaster(masterPrivateKey, childPublicAddress) {
 
 async function getBalances(provider, addresses, tokenAddress = null) {
     const balances = {};
+    const contractNames = {};
     for (const address of addresses) {
         if (tokenAddress === null) {
-            // Fetch balance for native coin (Ether)\
-
             const balance = await provider.getBalance(address);
-
-            // console.log(ethers.formatEther(balance));
-
-            // balances[address] = ethers.formatEther(balance);
             balances[address] = balance;
         } else {
             const contract = new Contract(tokenAddress, Abi.abi, provider);
             let balance = await contract.balanceOf(address);
-            // Fetch token balance (Not implemented in this example)
-            // You can use ERC20 contract ABI and call the balanceOf function on the contract
-            // to fetch token balances for the given tokenAddress and address.
-            // This requires using the ethers.js library or a similar library to interact with smart contracts.
-            // Please note that token balance retrieval involves calling the contract's methods,
-            // so it will require setting up a provider and interacting with the Ethereum network.
-            // For this example, I will provide a placeholder value.
             balances[address] = balance;
+            contractNames[tokenAddress] = await contract.name();
         }
     }
-    return balances;
+    if (tokenAddress == null) {
+        return balances;
+    } else {
+        return [balances, contractNames];
+    }
+
 }
 
 async function fetchGasPrice(providerUrl) {
@@ -68,15 +62,9 @@ async function fetchGasPrice(providerUrl) {
     }
 }
 
-async function getUnspentOutputs(address) {
-    // Implement fetching unspent outputs (UTXOs) for the given address
-    // This function is specific to Bitcoin, not required for Ethereum
-}
-
 
 module.exports = {
     deriveKeyPairFromMaster,
     getBalances,
-    getUnspentOutputs,
-    fetchGasPrice
+    fetchGasPrice,
 };

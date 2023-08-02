@@ -1,6 +1,10 @@
 const { Web3 } = require('web3');
 const { ethers } = require('ethers');
-const { deriveKeyPairFromMaster, getBalances, fetchGasPrice } = require('./utils');
+const {
+    deriveKeyPairFromMaster,
+    getBalances,
+    fetchGasPrice,
+} = require('./utils');
 const { infuraID } = require('./config');
 
 class Sweeper {
@@ -15,31 +19,53 @@ class Sweeper {
         for (const address in balances) {
             const balance = balances[address];
             if (balance > 0) {
-                const tx = await this.createNativeCoinTransaction(address, this.destinationAddress, balance);
-                // await this.broadcastTransaction(tx);
+                const tx = await this.createNativeCoinTransaction(
+                    address,
+                    this.destinationAddress,
+                    balance
+                );
                 console.log(this.ether);
                 if (tx == null) {
-                    console.log(`To low balance to transfer |${address}  : ${ethers.formatEther(balance.toString())} ETH`);
+                    console.log(
+                        `To low balance to transfer |${address}  : ${ethers.formatEther(
+                            balance.toString()
+                        )} ETH`
+                    );
                 } else {
-                    // console.log(tx);
-                    console.log(`sending balance from address :  ${address}   amount : ${ethers.formatEther(balance.toString())} ETH`);
+                    console.log(
+                        `sending balance from address :  ${address}   amount : ${ethers.formatEther(
+                            balance.toString()
+                        )} ETH`
+                    );
                 }
             }
-
         }
     }
 
     async sweepERC20Tokens(erc20TokenAddresses, depositAddresses) {
         for (const tokenAddress of erc20TokenAddresses) {
-            const balances = await getBalances(this.ether, depositAddresses, tokenAddress);
-            console.log(`ERC20 CONTRACT ${tokenAddress} balances found`);
+            const [balances, contractNames] = await getBalances(
+                this.ether,
+                depositAddresses,
+                tokenAddress
+            );
+            console.log(
+                `ERC20 CONTRACT ${contractNames[tokenAddress]} balances found`
+            );
             console.log(balances);
             for (const address in balances) {
                 const balance = balances[address];
                 if (balance > 0) {
-                    const tx = await this.createTokenTransferTransaction(tokenAddress, address, this.destinationAddress, balance);
-                    console.log(`sending ERC20Tokens ${tokenAddress} from address :  ${address}   to ${this.destinationAddress}  amount : ${ethers.formatEther(balance.toString())} ETH`);
-
+                    const tx = await this.createTokenTransferTransaction(
+                        tokenAddress,
+                        address,
+                        this.destinationAddress,
+                        balance
+                    );
+                    console.log(
+                        `sending ERC20Tokens ${tokenAddress} from address :  ${address}   to ${this.destinationAddress
+                        }  amount : ${ethers.formatEther(balance.toString())}  ${contractNames[tokenAddress]} ERC20 Token`
+                    );
                 }
             }
         }
@@ -59,8 +85,7 @@ class Sweeper {
         let estimatedGas = await this.ether.provider.estimateGas(tx);
         estimatedGas = Number(estimatedGas) * 0.00000002;
 
-
-        console.log("Estimated Gas Limit:", estimatedGas);
+        console.log('Estimated Gas Limit:', estimatedGas);
 
         // Subtract gas limit from tx.value directly
         let value = tx.value - ethers.parseEther(estimatedGas.toString());
@@ -70,18 +95,27 @@ class Sweeper {
             return null;
         }
         // tx.value = tx.value - ethers.parseEther(estimatedGas.toString());
-        console.log("After deducting gas:", tx.value);
+        console.log('After deducting gas:', tx.value);
 
         // Sign and send the transaction
         const res = await wallet.sendTransaction(tx);
         return res;
     }
 
-    async createTokenTransferTransaction(tokenAddress, fromAddress, toAddress, amount) {
+    async createTokenTransferTransaction(
+        tokenAddress,
+        fromAddress,
+        toAddress,
+        amount
+    ) {
         const keyPair = deriveKeyPairFromMaster(this.masterPrivateKey, fromAddress);
         const wallet = new ethers.Wallet(keyPair.privateKey, this.ether);
 
-        const contract = new ethers.Contract(tokenAddress, ['function transfer(address to, uint256 value)'], wallet);
+        const contract = new ethers.Contract(
+            tokenAddress,
+            ['function transfer(address to, uint256 value)'],
+            wallet
+        );
         const gasPrice = await fetchGasPrice(infuraID);
         // const gasLimit = await contract.transfer(toAddress, amount);
 
@@ -90,10 +124,8 @@ class Sweeper {
             gasPrice: gasPrice,
         });
 
-
         return tx;
     }
-
 }
 
 module.exports = Sweeper;
