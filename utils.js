@@ -3,6 +3,7 @@ const { ethers, Contract, getDefaultProvider } = require('ethers');
 const Abi = require('./artifacts/contracts/Test.sol/Test.json');
 const axios = require('axios');
 
+//method to genetate the private key of the provided child address
 function deriveKeyPairFromMaster(masterPrivateKey, childPublicAddress) {
     const hdNode = ethers.HDNodeWallet.fromExtendedKey(masterPrivateKey);
 
@@ -20,6 +21,7 @@ function deriveKeyPairFromMaster(masterPrivateKey, childPublicAddress) {
     throw new Error('Child public address not found.');
 }
 
+//fetch balances of the native coins and the erc20
 async function getBalances(provider, addresses, tokenAddress = null) {
     const balances = {};
     const contractNames = {};
@@ -39,9 +41,9 @@ async function getBalances(provider, addresses, tokenAddress = null) {
     } else {
         return [balances, contractNames];
     }
-
 }
 
+//method to fetch latest gas price from the market
 async function fetchGasPrice(providerUrl) {
     try {
         const response = await axios.post(providerUrl, {
@@ -61,7 +63,6 @@ async function fetchGasPrice(providerUrl) {
         throw new Error('Error fetching gas price: ' + error.message);
     }
 }
-
 
 module.exports = {
     deriveKeyPairFromMaster,

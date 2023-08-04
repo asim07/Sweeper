@@ -1,9 +1,9 @@
 const Sweeper = require('./sweeper');
 
-// Replace with the actual master private key and destination address
+// Replace with the actual master private key and destination address in config file
 const { masterPrivateKey, destinationAddress } = require('./config');
 
-// Replace with the actual deposit addresses and ERC20 token addresses
+// Replace with the actual deposit addresses and ERC20 token addresses in config file
 const { depositAddresses, erc20TokenAddresses } = require('./config');
 const sweeper = new Sweeper(masterPrivateKey, destinationAddress);
 
